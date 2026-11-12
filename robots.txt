@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://rexpoker-nagoya.com/sitemap.xml
