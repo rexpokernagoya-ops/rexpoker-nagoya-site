@@ -143,6 +143,135 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 }
 .sisterbox{display:grid;grid-template-columns:280px 1fr;gap:24px;background:var(--surface);border-radius:16px;padding:20px;border-left:4px solid var(--gold);margin-top:20px}.sisterbox img{width:100%;height:100%;min-height:180px;object-fit:cover;border-radius:12px}.sisterbox b{font-size:20px}.sisterbox p{color:var(--mute);margin:6px 0}.sisterbox .small{font-size:14px}.sisterbox .btn{margin-top:10px}.gmap{width:100%;height:300px;border:0;background:var(--surface);border-radius:16px;margin-top:20px;display:block}@media (max-width:767px){.sisterbox{grid-template-columns:1fr}.sisterbox img{height:auto;aspect-ratio:16/10}.gmap{height:260px}}
 </style>
+<script id="jp-linebreak-js">
+/* 文の終わり（。！？）で改行・「バカラ〜ブラックジャック」は行の頭に・言葉の切れ目でだけ折り返す */
+document.addEventListener('DOMContentLoaded',function(){
+  var BLOCK='h1,h2,h3,h4,p,li,td,th,dd,dt,summary,figcaption';
+  var NOBR=['一の位','もう1枚','「プレイヤー」かを予想','よくある質問'];
+  var SKIP='nav,.btn,.tag,.badges,.price,.big,.zero,.logo,.n,.cmp,script,style,noscript';
+  var BJ=/バカラ(?:・|や|と|／|も)ブラックジャック/g;
+  var END='。！？', CLOSE='）」』】〉》］)、。，．！？!?・…ー々ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ';
+  function cls(c){
+    if(!c)return '';
+    if(/\s/.test(c))return 'S';
+    if(/[ぁ-ゖ]/.test(c))return 'H';
+    if(/[ァ-ヺー]/.test(c))return 'K';
+    if(/[一-龯々〆ヶ]/.test(c))return 'J';
+    if(/[（「『【〈《［(]/.test(c))return 'O';
+    if(/[）」』】〉》］)、。，．！？!?…]/.test(c))return 'C';
+    return 'A';
+  }
+  function canBreak(full,i){
+    var p=full[i-1],c=full[i],pp=full[i-2];
+    if(!p||!c||c==='\n'||p==='\n')return false;
+    if(CLOSE.indexOf(c)>=0)return false;
+    var a=cls(p),b=cls(c);
+    if(a==='O')return false;
+    if(p==='・'&&(b==='K'||b==='J'||b==='A'))return true;
+    if(b==='O')return true;
+    if(a==='C'&&p!=='…'){
+      if('、。，．！？!?'.indexOf(p)<0&&b==='H')return false;
+      return true;
+    }
+    if((p==='お'||p==='ご')&&(b==='J'||b==='K'))return false;
+    if(p==='の'&&c==='方')return false;
+    if(a==='H'&&(c==='お'||c==='ご')&&/[JK]/.test(cls(full[i+1])))return true;
+    if(a==='H'&&b==='H'&&cls(pp)==='J'&&'がをは'.indexOf(p)>=0){var hr=0;while(cls(full[i+hr])==='H')hr++;if(hr>=4)return true;}
+    if(a==='H'&&(b==='J'||b==='K'||b==='A')){
+      if(cls(pp)==='J'&&'のをがはにでとへもや'.indexOf(p)<0)return false;
+      return true;
+    }
+    if(a==='K'&&b==='J'&&cls(pp)==='K'&&'用的風製式型様付台類内外中店'.indexOf(c)<0)return true;
+    if(a==='K'&&b==='A'&&cls(pp)==='K'&&/[A-Za-z0-9]/.test(c))return true;
+    if(a==='K'&&b==='K'){var head=full.slice(0,i),run=0;while(cls(full[i+run])==='K')run++;if(run>=3&&/(アミューズメント|ポーカー|カジノ|ドリンク|リングゲーム|トーナメント)$/.test(head))return true;}
+    return false;
+  }
+  function joinHere(full,i){
+    var p=full[i-1],c=full[i];if(!p||!c)return false;
+    if('）」』】〉》］)'.indexOf(p)>=0&&cls(c)==='H')return true;
+    if(p==='・'||c==='・'){var at=(p==='・')?i-1:i,L=0,R=0;while(at-1-L>=0&&/[一-龯々ァ-ヺー]/.test(full[at-1-L]))L++;while(/[一-龯々ァ-ヺー]/.test(full[at+1+R]||''))R++;if(L<=3&&R<=3)return true;}
+    if(c==='〜'||p==='〜')return true;
+    if((p==='-'||c==='-')&&/[0-9]/.test(p+c))return true;
+    return false;
+  }
+  var blocks=[].slice.call(document.querySelectorAll(BLOCK)).filter(function(el){
+    return !el.closest(SKIP)&&!el.querySelector(BLOCK);
+  });
+  blocks.forEach(function(el){
+    var items=[],full='';
+    (function walk(n){
+      for(var k=n.firstChild;k;k=k.nextSibling){
+        if(k.nodeType===3){items.push({node:k,start:full.length});full+=k.data;}
+        else if(k.nodeType===1){
+          if(k.tagName==='BR'){items.push({br:k,pos:full.length});full+='\n';}
+          else if(!k.matches(SKIP))walk(k);
+        }
+      }
+    })(el);
+    if(!full.trim())return;
+    var KEEP=[/REX POKER NAGOYA/g,/23ビル B2F/g];function nb(s){KEEP.forEach(function(re){s=s.replace(re,function(m){return m.replace(/ /g,'\u00a0');});});return s;}
+    items.forEach(function(it){if(it.node){var v=nb(it.node.data);if(v!==it.node.data)it.node.data=v;}});
+    full=nb(full);
+    var ops={};
+    // 文の終わりで改行
+    for(var i=1;i<full.length;i++){
+      if(END.indexOf(full[i-1])>=0&&CLOSE.indexOf(full[i])<0&&full[i]!=='\n'&&full.slice(i).trim()!==''){
+        var j=i;while(j<full.length&&/[ \t\r\n]/.test(full[j])&&full[j]!=='\n')j++;
+        if(full[j]!=='\n')ops[i]='br';
+      }
+    }
+    // バカラ〜ブラックジャックを行の頭に
+    var m;BJ.lastIndex=0;
+    while((m=BJ.exec(full))){
+      var at=m.index;if('（「『'.indexOf(full[at-1])>=0)at--;
+      var nl=full.lastIndexOf('\n',at-1);var since=full.slice(nl+1,at);
+      var lastBr=-1;for(var q in ops){q=+q;if(ops[q]==='br'&&q<=at&&q>lastBr)lastBr=q;}
+      if(lastBr>nl+1)since=full.slice(lastBr,at);
+      if(since.trim()!=='')ops[at]='br';
+    }
+    // br.sp（スマホだけの改行）と重なる所は常に改行に
+    items.forEach(function(it){
+      if(it.br&&it.br.classList.contains('sp')){
+        var p=it.pos;BJ.lastIndex=0;
+        if(END.indexOf(full[p-1])>=0||full.slice(p+1).search(BJ)===0)it.br.classList.remove('sp');
+      }
+    });
+    // 言葉の切れ目
+    var SPR=/（[^（）\n]{1,8}）/g,sm;while((sm=SPR.exec(full))){for(var z=sm.index+1;z<sm.index+sm[0].length;z++)if(ops[z]!=='br')ops[z]='wj';}
+    NOBR.forEach(function(w){var k=full.indexOf(w);while(k>=0){for(var z=k+1;z<k+w.length;z++)if(ops[z]!=='br')ops[z]='wj';k=full.indexOf(w,k+1);}});
+    for(var i2=1;i2<full.length;i2++){if(ops[i2])continue;if(joinHere(full,i2))ops[i2]='wj';else if(canBreak(full,i2))ops[i2]='wbr';}
+    var any=false;
+    items.forEach(function(it){
+      if(!it.node)return;
+      var s=it.node.data,st=it.start,frag=document.createDocumentFragment(),last=0,changed=false;
+      for(var x=0;x<s.length;x++){
+        var o=ops[st+x];
+        if(o&&!(x===0&&o==='wbr')){
+          if(x>last)frag.appendChild(document.createTextNode(s.slice(last,x)));
+          frag.appendChild(o==='wj'?document.createTextNode('\u2060'):document.createElement(o));last=x;changed=true;
+        }else if(o&&x===0){
+          frag.appendChild(o==='wj'?document.createTextNode('\u2060'):document.createElement(o));changed=true;
+        }
+      }
+      if(!changed)return;
+      frag.appendChild(document.createTextNode(s.slice(last)));
+      it.node.parentNode.replaceChild(frag,it.node);any=true;
+    });
+    el.classList.add('jl');
+  });
+});
+</script>
+<style id="jp-linebreak">
+/* 日本語の改行を整える（2026-11-13）：文ごとに改行し、言葉の途中では切らない */
+.hero .wrap,.hero-lp .wrap,.perks>div,.after>div,.worries>div,.why>div,.drinks>div,.games>article,.steps>li{min-width:0}
+.jl{word-break:keep-all;overflow-wrap:break-word;line-break:strict;text-wrap:balance}
+@media (max-width:767px){.answer{padding:20px 18px;font-size:15px}}
+h1,h2,h3,h4,.label,.q,summary,.btn,.tag,.zero,.badges span,figcaption,th{text-wrap:balance}
+p,li,td,dd,dt,small,details p{text-wrap:pretty}
+.btn{text-align:center}
+.sp{display:none}@media (max-width:767px){.sp{display:inline}}
+.game li{padding-left:1em;text-indent:-1em}
+</style>
 </head>
 <body>
 <header><div class="wrap">
@@ -157,7 +286,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
   <div class="wrap">
     <span class="label">POKER BAR IN SHINSAKAE, NAGOYA</span>
     <h1>はじめての<br>ポーカーは、REXで。</h1>
-    <p>名古屋・新栄のポーカーバー。ルールを知らなくても、45分ほどの初心者講習から始められます。お金は賭けません。</p>
+    <p>名古屋・新栄のポーカーバー。ルールを知らなくても、<br class="sp">45分ほどの初心者講習から始められます。お金は賭けません。</p>
     <div class="btns"><a class="btn btn-main" href="https://lin.ee/ioP4PCN" target="_blank" rel="noopener">公式LINEで初心者講習を予約</a><a class="btn btn-sub" href="#games">料金を見る</a></div>
     <p class="promo"><span>期間限定</span>公式LINEで事前予約すると、初心者講習が無料</p>
     <small>予約なしでも入れます。初心者講習は予約しておくと確実です。</small>
@@ -165,16 +294,16 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 </section>
 
 <section style="border:0;padding-top:0"><div class="wrap">
-  <p class="answer">REX POKER NAGOYAは、名古屋市中区新栄にある、ポーカーと食事を楽しめるアミューズメントバーです。営業は月〜木 18:00〜24:00、金土日・祝日 14:00〜24:00（日によって早く開けることもあります）。お金は賭けず、初めての方は45分ほどの初心者講習（2,000円・チップ付き）から遊べます。</p>
+  <p class="answer">REX POKER NAGOYAは、名古屋市中区新栄にある、ポーカーと食事を楽しめるアミューズメントバーです。営業は月〜木 18:00〜24:00、金土日・祝日 14:00〜24:00（日によって早く開けることもあります）。お金は賭けず、<br class="sp">初めての方は45分ほどの初心者講習（2,000円・チップ付き）から遊べます。</p>
 </div></section>
 
 <section id="first"><div class="wrap">
   <span class="label">FOR BEGINNERS</span>
   <h2>こんな不安、ありませんか？</h2>
   <div class="worries">
-    <div class="bubble"><p class="q">ルールをまったく知らない…</p><p class="a"><b>大丈夫です。</b>45分ほどの初心者講習で、遊び方を1から教えます。終わったらそのまま実戦へ。</p></div>
+    <div class="bubble"><p class="q">ルールをまったく知らない…</p><p class="a"><b>大丈夫です。</b>45分ほどの初心者講習で、<br class="sp">遊び方を1から教えます。終わったらそのまま実戦へ。</p></div>
     <div class="bubble"><p class="q">お金を賭けるんですよね？</p><p class="a"><b>賭けません。</b>参加料でチップを受け取って遊びます。景品やお金への交換もありません。</p></div>
-    <div class="bubble"><p class="q">ゲームをしなくても入れる？</p><p class="a"><b>入れます。</b>バーカウンターとソファ席があり、食事やドリンクだけのご来店も歓迎です。</p></div>
+    <div class="bubble"><p class="q">ゲームをしなくても入れる？</p><p class="a"><b>入れます。</b>バーカウンターとソファ席があり、食事やドリンクだけの<br class="sp">ご来店も歓迎です。</p></div>
   </div>
 </div></section>
 
@@ -205,8 +334,8 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 <section><div class="wrap">
   <span class="label">DISCOUNT</span><h2>リングゲームのエントリーが1,000円引き</h2>
   <p class="lead" style="margin-bottom:20px">どちらもリングゲームのエントリー（3,000円）からの割引です。2つは併用できるので、最大2,000円引きになります。</p>
-  <div class="disc"><div><p class="big">1,000<small>円引き</small></p><h3 style="margin:12px 0 4px">学生・女性の方</h3><p class="lead">学生の方は学生証を見せてください（学生と女性の割引は重ねられません）。</p></div>
-  <div><p class="big">1,000<small>円引き</small></p><h3 style="margin:12px 0 4px">オープンから2時間以内のご来店</h3><p class="lead">月〜木は18:00〜20:00、金土日・祝日は14:00〜16:00のご来店が対象です（早く開けた日はその時間から2時間）。</p></div></div>
+  <div class="disc"><div><p class="big">1,000<small>円引き</small></p><h3 style="margin:12px 0 4px">学生・女性の方</h3><p class="lead">学生の方は学生証を見せてください<br class="sp">（学生と女性の割引は重ねられません）。</p></div>
+  <div><p class="big">1,000<small>円引き</small></p><h3 style="margin:12px 0 4px">オープンから2時間以内のご来店</h3><p class="lead">月〜木は18:00〜20:00、金土日・祝日は14:00〜16:00のご来店が対象です<br class="sp">（早く開けた日は<br class="sp">その時間から2時間）。</p></div></div>
   <p class="note">例：学生の方がオープンから2時間以内にご来店 → エントリー3,000円が1,000円に。</p>
 </div></section>
 
@@ -250,7 +379,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
 <section id="rules"><div class="wrap">
   <span class="label">HOUSE RULES</span>
   <h2>みんなが楽しく遊ぶためのお願い</h2>
-  <ul class="rules"><li>景品・金品への交換は行っていません</li><li>チップでの商品購入、チップの共有はできません</li><li>ほかのお客様のプレイを批判しないでください</li><li>プレイ中のうその発言は禁止です</li><li>ルールの判断はディーラー・フロアが行います</li><li>20歳未満の方にはお酒をお出ししません（年齢確認をする場合があります）</li><li>泥酔されている方は、遊戯やお酒をお断りする場合があります</li><li>ほかのお客様へのホームゲームの勧誘、スタッフの引き抜きはご遠慮ください</li><li>撮影は、ほかのお客様に配慮してお願いします</li><li>賭博は一切禁止です。見つけた場合は退店・出入り禁止とします</li><li>スタッフへのつきまといは禁止です</li></ul>
+  <ul class="rules"><li>景品・金品への交換は行っていません</li><li>チップでの商品購入、チップの共有はできません</li><li>ほかのお客様のプレイを批判しないでください</li><li>プレイ中のうその発言は禁止です</li><li>ルールの判断はディーラー・フロアが行います</li><li>20歳未満の方にはお酒をお出ししません（年齢確認をする場合があります）</li><li>泥酔されている方は、<br class="sp">遊戯やお酒をお断りする場合があります</li><li>ほかのお客様へのホームゲームの勧誘、スタッフの引き抜きはご遠慮ください</li><li>撮影は、ほかのお客様に配慮してお願いします</li><li>賭博は一切禁止です。見つけた場合は退店・出入り禁止とします</li><li>スタッフへのつきまといは禁止です</li></ul>
 </div></section>
 
 <section id="faq"><div class="wrap" style="max-width:820px">
@@ -258,7 +387,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
   <h2>よくある質問</h2>
   <details open><summary>何歳から入れますか？</summary><p>18歳未満の方は、終日ご利用いただけません。</p></details>
   <details><summary>友達と一緒に行けますか？</summary><p>もちろんです。混雑時は別のテーブルになることがあります。</p></details>
-  <details><summary>予約は必要ですか？</summary><p>予約なしでも入れます。初心者講習を受けたい方は、公式LINEで予約しておくと確実です。今は期間限定で、事前予約をすると初心者講習が無料になります。</p></details>
+  <details><summary>予約は必要ですか？</summary><p>予約なしでも入れます。初心者講習を受けたい方は、<br class="sp">公式LINEで予約しておくと確実です。今は期間限定で、事前予約をすると初心者講習が無料になります。</p></details>
   <details><summary>飲食の持ち込みはできますか？</summary><p>持ち込みはお断りしています。店内のフード・ドリンクをご利用ください。</p></details>
   <details><summary>写真や動画を撮ってもいいですか？</summary><p>周りの方の迷惑にならない範囲で撮影できます。</p></details>
   <details><summary>残ったチップはどうなりますか？</summary><p>お店に預けて、次回のご来店で使えます。</p></details>
